@@ -10,3 +10,6 @@ next-env.d.ts
 .vercel
 .DS_Store
 coverage
+
+# Sanity Functions local build output
+.build
