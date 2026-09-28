@@ -42,7 +42,8 @@ export function useCreateAndOpen() {
           return handle.documentId
         }
         case 'client': {
-          const handle = await createClient({name: 'New client', status: 'active', ...initial})
+          const slug = {_type: 'slug', current: `new-client-${Math.random().toString(36).slice(2, 8)}`}
+          const handle = await createClient({name: 'New client', slug, status: 'active', primaryLanguage: 'en-GB', ...initial})
           navigate({name: 'client', id: handle.documentId, tab: 'general'})
           return handle.documentId
         }

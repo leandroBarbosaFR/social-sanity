@@ -29,6 +29,7 @@ import {CaptionAssist} from '../components/post/CaptionAssist'
 import {InstagramPreview, type PreviewProps} from '../components/post/InstagramPreview'
 import {CoverImageField, MediaField} from '../components/post/MediaField'
 import {PublishingPanel} from '../components/post/PublishingPanel'
+import {WorkflowStepper} from '../components/post/WorkflowStepper'
 import {DocumentStateChips, useDocumentState} from '../components/DocumentState'
 import {EditorActions} from '../components/post/workflow'
 import {EmptyState, LoadingState, Notice} from '../components/States'
@@ -144,6 +145,7 @@ function EditorWorkspace({handle}: {handle: DocumentHandle}) {
   const form = (
     <Container width={1} paddingX={4} paddingY={5}>
       <Stack gap={5}>
+        <WorkflowStepper status={status} />
         <PublishingPanel doc={doc} onRetry={() => setPublishDialogOpen(true)} />
 
         {(status === 'scheduled' || status === 'approved') && (

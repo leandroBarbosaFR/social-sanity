@@ -55,11 +55,8 @@ export interface DisconnectInstagramResponse {
   disconnected: true
 }
 
-/** POST /api/posts/:postId/publish */
-export interface PublishNowRequest {
-  /** Required when the post is not approved/scheduled/failed. */
-  confirmUnapproved?: boolean
-}
+/** POST /api/posts/:postId/publish — only approved, scheduled or failed posts (see publishEligibility). */
+export type PublishNowRequest = Record<string, never>
 
 export type PublishNowResponse =
   | {outcome: 'published'; instagramMediaId: string | null; permalink: string | null; mode: 'live' | 'mock'}
@@ -113,12 +110,10 @@ export interface InstagramConnectionSummary {
 
 /**
  * Error body for `publish_rejected` from POST /api/posts/:postId/publish.
- * `issues` is present for validation failures (HTTP 400); `requiresConfirmation` when the post is
- * not approved and `confirmUnapproved` was not sent (HTTP 409).
+ * `issues` is present for validation failures (HTTP 400); a post that is not approved is a 409.
  */
 export interface PublishRejectedErrorBody extends ApiErrorBody {
   issues?: ValidationIssue[]
-  requiresConfirmation?: boolean
 }
 
 /** POST /api/internal/publish (HMAC-signed, Sanity Functions → backend). */

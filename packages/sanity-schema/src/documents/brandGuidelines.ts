@@ -43,6 +43,13 @@ export const brandGuidelines = defineType({
     stringList('wordsToAvoid', 'Words to avoid'),
     stringList('ctaPreferences', 'CTA preferences', 'Preferred calls to action, e.g. “Book a table”.'),
     stringList('languages', 'Languages', 'BCP 47 codes, e.g. en-GB, fr-FR.'),
+    defineField({
+      name: 'notes',
+      title: 'Notes',
+      description: 'Anything else reviewers and AI drafts should respect (legal lines, spelling, emoji use).',
+      type: 'text',
+      rows: 4,
+    }),
   ],
   preview: {
     select: {client: 'client.name'},

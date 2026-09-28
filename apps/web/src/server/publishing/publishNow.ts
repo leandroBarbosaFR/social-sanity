@@ -1,10 +1,9 @@
 import 'server-only'
 import {
-  CONFIRMABLE_PUBLISH_STATUSES,
-  DIRECT_PUBLISH_STATUSES,
+  PUBLISHABLE_STATUSES,
+  publishEligibility,
   validatePostForPublishing,
   type PublishNowResponse,
-  type WorkflowStatus,
 } from '@social-studio/shared'
 import {ApiError} from '../errors'
 import {getInstagramService} from '../instagram'
@@ -17,7 +16,7 @@ import {runPublish} from './run'
  * "Publish now" / retry from the app. Validates without touching the document, claims the lock,
  * then runs the publish synchronously.
  */
-export async function publishNow(postId: string, options: {confirmUnapproved: boolean; userId: string}): Promise<PublishNowResponse> {
+export async function publishNow(postId: string, options: {userId: string}): Promise<PublishNowResponse> {
   // Fail fast (503) before claiming if Instagram is not configured.
   const service = getInstagramService()
 
@@ -33,21 +32,11 @@ export async function publishNow(postId: string, options: {confirmUnapproved: bo
     throw new ApiError(409, 'conflict', 'Save (publish) the post’s latest changes first.')
   }
 
-  const status = post.workflowStatus
-  if (status === 'publishing') return {outcome: 'in_progress'}
-  if (status === 'published') return {outcome: 'already_published'}
-  const isDirect = (DIRECT_PUBLISH_STATUSES as readonly (string | null | undefined)[]).includes(status)
-  const isConfirmable = (CONFIRMABLE_PUBLISH_STATUSES as readonly (string | null | undefined)[]).includes(status)
-  if (!isDirect && !isConfirmable) {
-    throw new ApiError(409, 'publish_rejected', 'This post cannot be published from its current status.')
-  }
-  if (isConfirmable && !options.confirmUnapproved) {
-    throw new ApiError(
-      409,
-      'publish_rejected',
-      'This post has not been approved. Confirm to publish it anyway.',
-      {requiresConfirmation: true},
-    )
+  const eligibility = publishEligibility(post.workflowStatus)
+  if (!eligibility.allowed) {
+    if (eligibility.reason === 'in_progress') return {outcome: 'in_progress'}
+    if (eligibility.reason === 'already_published') return {outcome: 'already_published'}
+    throw new ApiError(409, 'publish_rejected', eligibility.message)
   }
 
   const issues = validatePostForPublishing(toValidationInput(post))
@@ -55,10 +44,8 @@ export async function publishNow(postId: string, options: {confirmUnapproved: bo
     throw new ApiError(400, 'publish_rejected', issues.map((issue) => issue.message).join(' '), {issues})
   }
 
-  const allowedStatuses: readonly WorkflowStatus[] = options.confirmUnapproved
-    ? [...DIRECT_PUBLISH_STATUSES, ...CONFIRMABLE_PUBLISH_STATUSES]
-    : DIRECT_PUBLISH_STATUSES
-  const claim = await claimPost(post, {allowedStatuses, mode: service.mode})
+  // The claim re-checks the status atomically (ifRevisionId), so approval cannot be bypassed by a race.
+  const claim = await claimPost(post, {allowedStatuses: PUBLISHABLE_STATUSES, mode: service.mode})
   if (!claim.claimed) {
     // Someone else changed or claimed the post between our read and our write.
     const latest = await fetchPublishedPost(postId)

@@ -1,5 +1,14 @@
 import {Box, Card, Flex, Text} from '@sanity/ui'
-import {WORKFLOW_STATUS_LABELS, WORKFLOW_STATUS_TONES, type StatusTone, type WorkflowStatus} from '@social-studio/shared'
+import {
+  editorialStage,
+  PUBLISHING_PHASE_LABELS,
+  publishingPhase,
+  WORKFLOW_STATUS_LABELS,
+  WORKFLOW_STATUS_TONES,
+  type PublishingPhase,
+  type StatusTone,
+  type WorkflowStatus,
+} from '@social-studio/shared'
 import {styled} from 'styled-components'
 
 const Dot = styled.span<{$tone: StatusTone}>`
@@ -52,4 +61,31 @@ export function StatusBadge({status, variant}: {status: WorkflowStatus | null | 
     )
   }
   return <ToneLabel tone={WORKFLOW_STATUS_TONES[status]} label={WORKFLOW_STATUS_LABELS[status]} variant={variant} />
+}
+
+/** The review-workflow half of a status (Idea … Approved). */
+export function WorkflowStageBadge({status}: {status: WorkflowStatus | null | undefined}) {
+  const stage = editorialStage(status)
+  return <ToneLabel tone={WORKFLOW_STATUS_TONES[stage]} label={WORKFLOW_STATUS_LABELS[stage]} />
+}
+
+const PHASE_TONES: Record<PublishingPhase, StatusTone> = {
+  unscheduled: 'default',
+  scheduled: 'primary',
+  publishing: 'primary',
+  published: 'positive',
+  failed: 'critical',
+}
+
+/** The publishing half of a status (Not scheduled, Scheduled, Publishing, Published, Failed). */
+export function PublishingBadge({status}: {status: WorkflowStatus | null | undefined}) {
+  const phase = publishingPhase(status)
+  if (phase === 'unscheduled') {
+    return (
+      <Text size={1} muted>
+        —
+      </Text>
+    )
+  }
+  return <ToneLabel tone={PHASE_TONES[phase]} label={PUBLISHING_PHASE_LABELS[phase]} />
 }

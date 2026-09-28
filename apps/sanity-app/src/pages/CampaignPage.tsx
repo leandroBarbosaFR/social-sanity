@@ -8,7 +8,7 @@ import {Suspense, useId} from 'react'
 
 import {PostTable} from '../components/ContentTable'
 import {DocumentStateChips, SaveButton} from '../components/DocumentState'
-import {SelectField, StringField, TextField} from '../components/fields'
+import {SelectField, StringField, TagListField, TextField} from '../components/fields'
 import {FieldLabel, Page, Section} from '../components/Layout'
 import {EmptyState, LoadingState} from '../components/States'
 import {errorMessage} from '../lib/backend'
@@ -103,7 +103,10 @@ function CampaignWorkspace({handle}: {handle: DocumentHandle}) {
                 />
               </Box>
             </Flex>
+            <TextField handle={handle} path="description" label="Description" rows={3} />
             <TextField handle={handle} path="objective" label="Objective" rows={3} />
+            <TextField handle={handle} path="targetAudience" label="Target audience" description="Narrows the client’s general audience for this campaign." rows={2} />
+            <TagListField handle={handle} path="keyMessages" label="Key messages" description="What every post in this campaign should get across." placeholder="Add a message and press Enter" />
             <Flex justify="flex-end">
               <Button mode="bleed" tone="critical" icon={TrashIcon} text="Delete campaign" fontSize={1} padding={2} onClick={remove} />
             </Flex>

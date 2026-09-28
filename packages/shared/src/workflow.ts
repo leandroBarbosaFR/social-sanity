@@ -72,15 +72,61 @@ export function canTransition(from: WorkflowStatus, to: WorkflowStatus): boolean
   return USER_TRANSITIONS[from].includes(to)
 }
 
-/** Statuses from which "Publish now" is allowed without an extra confirmation. */
-export const DIRECT_PUBLISH_STATUSES: readonly WorkflowStatus[] = ['approved', 'scheduled', 'failed']
+/** Publishing is only possible after human approval: from Approved, Scheduled, or a Failed run. */
+export const PUBLISHABLE_STATUSES: readonly WorkflowStatus[] = ['approved', 'scheduled', 'failed']
 
-/** Statuses from which publishing is possible at all (with explicit confirmation). */
-export const CONFIRMABLE_PUBLISH_STATUSES: readonly WorkflowStatus[] = [
-  'draft',
-  'internalReview',
-  'clientReview',
-]
+export type PublishEligibility =
+  | {allowed: true}
+  | {allowed: false; reason: 'not_approved' | 'in_progress' | 'already_published'; message: string}
+
+/**
+ * Whether a post in `status` may be handed to the publishing service. Approval is mandatory:
+ * content that has not passed the review workflow is never published, whoever asks.
+ */
+export function publishEligibility(status: string | null | undefined): PublishEligibility {
+  if (status === 'publishing') return {allowed: false, reason: 'in_progress', message: 'A publishing run is already in progress.'}
+  if (status === 'published') return {allowed: false, reason: 'already_published', message: 'This post was already published.'}
+  if (status && (PUBLISHABLE_STATUSES as readonly string[]).includes(status)) return {allowed: true}
+  return {allowed: false, reason: 'not_approved', message: 'Only approved posts can be published. Take it through review first.'}
+}
+
+/** The editorial half of a status: where the post stands in the review workflow. */
+export const EDITORIAL_STAGES = ['idea', 'draft', 'internalReview', 'clientReview', 'approved'] as const
+export type EditorialStage = (typeof EDITORIAL_STAGES)[number]
+
+/** The publishing half of a status: what the publishing service is doing with it. */
+export const PUBLISHING_PHASES = ['unscheduled', 'scheduled', 'publishing', 'published', 'failed'] as const
+export type PublishingPhase = (typeof PUBLISHING_PHASES)[number]
+
+export const PUBLISHING_PHASE_LABELS: Record<PublishingPhase, string> = {
+  unscheduled: 'Not scheduled',
+  scheduled: 'Scheduled',
+  publishing: 'Publishing',
+  published: 'Published',
+  failed: 'Failed',
+}
+
+/**
+ * `workflowStatus` is one field on purpose (the scheduler, locks and filters read one value), but it
+ * describes two things. Scheduling and publishing are only reachable after approval, so every
+ * publishing status is editorially "approved".
+ */
+export function editorialStage(status: WorkflowStatus | null | undefined): EditorialStage {
+  if (!status) return 'idea'
+  return (EDITORIAL_STAGES as readonly string[]).includes(status) ? (status as EditorialStage) : 'approved'
+}
+
+export function publishingPhase(status: WorkflowStatus | null | undefined): PublishingPhase {
+  switch (status) {
+    case 'scheduled':
+    case 'publishing':
+    case 'published':
+    case 'failed':
+      return status
+    default:
+      return 'unscheduled'
+  }
+}
 
 /** Content is locked for editing while the publishing service owns it or after it went live. */
 export function isLockedStatus(status: WorkflowStatus | undefined): boolean {
@@ -94,7 +140,8 @@ export function isWorkflowStatus(value: unknown): value is WorkflowStatus {
 /** Status groups used by list filters. */
 export const STATUS_FILTERS = [
   {id: 'all', label: 'All', statuses: null},
-  {id: 'draft', label: 'Draft', statuses: ['idea', 'draft']},
+  {id: 'idea', label: 'Idea', statuses: ['idea']},
+  {id: 'draft', label: 'Draft', statuses: ['draft']},
   {id: 'review', label: 'Review', statuses: ['internalReview', 'clientReview']},
   {id: 'approved', label: 'Approved', statuses: ['approved']},
   {id: 'scheduled', label: 'Scheduled', statuses: ['scheduled', 'publishing']},

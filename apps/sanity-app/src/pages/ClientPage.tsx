@@ -37,6 +37,9 @@ function GeneralTab({handle}: {handle: DocumentHandle}) {
         <Box flex={1} style={{minWidth: 220}}>
           <StringField handle={handle} path="industry" label="Industry" />
         </Box>
+        <Box style={{width: 160}}>
+          <StringField handle={handle} path="primaryLanguage" label="Primary language" placeholder="en-GB" />
+        </Box>
       </Flex>
       <TextField handle={handle} path="description" label="Brand description" description="A short description of the business, in plain language." rows={5} />
       <Box style={{maxWidth: 240}}>
@@ -78,8 +81,9 @@ function BrandFields({guidelinesId}: {guidelinesId: string}) {
       </Flex>
       <TagListField handle={handle} path="ctaPreferences" label="CTA preferences" placeholder="e.g. Book a table" />
       <TagListField handle={handle} path="languages" label="Languages" description="BCP 47 codes, e.g. en-GB, fr-FR." placeholder="en-GB" />
+      <TextField handle={handle} path="notes" label="Notes" description="Legal lines, spelling, emoji use: anything reviewers and AI drafts must respect." rows={3} />
       <Text size={1} muted>
-        Brand guidelines are stored as structured content so they can later be used as context for AI-assisted drafting.
+        Each field is structured content: AI caption drafts read voice, audience, pillars and vocabulary from here.
       </Text>
     </Stack>
   )

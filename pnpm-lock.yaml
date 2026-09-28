@@ -467,6 +467,9 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+      vitest:
+        specifier: 5.0.1
+        version: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(jsdom@29.1.1(@noble/hashes@2.4.0))(vite@8.3.1(@types/node@24.19.0)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/sanity-schema:
     dependencies:
@@ -510,6 +513,9 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+      vitest:
+        specifier: 5.0.1
+        version: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@24.19.0)(jsdom@29.1.1(@noble/hashes@2.4.0))(vite@8.3.1(@types/node@24.19.0)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/workflows:
     dependencies:

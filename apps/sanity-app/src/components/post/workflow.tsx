@@ -1,6 +1,6 @@
 import {LaunchIcon} from '@sanity/icons/Launch'
 import {PublishIcon} from '@sanity/icons/Publish'
-import {Button, Card, Checkbox, Dialog, Flex, Stack, Text} from '@sanity/ui'
+import {Button, Card, Dialog, Flex, Stack, Text} from '@sanity/ui'
 import {useToast} from '@sanity/ui/toast'
 import {Tooltip} from '@sanity/ui/tooltip'
 import {
@@ -11,9 +11,7 @@ import {
 } from '@sanity/sdk-react'
 import {
   canTransition,
-  CONFIRMABLE_PUBLISH_STATUSES,
-  DIRECT_PUBLISH_STATUSES,
-  WORKFLOW_STATUS_LABELS,
+  publishEligibility,
   type PublishNowRequest,
   type PublishNowResponse,
   type ValidationIssue,
@@ -61,14 +59,12 @@ function PublishDialog({
   onClose: () => void
 }) {
   const status = doc.workflowStatus ?? 'idea'
-  const needsConfirmation = CONFIRMABLE_PUBLISH_STATUSES.includes(status)
-  const [confirmed, setConfirmed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<{tone: 'positive' | 'critical' | 'caution'; message: string} | null>(null)
   const request = useBackend()
   const apply = useApplyDocumentActions()
   const handle: DocumentHandle = {documentId: doc._id.replace(/^drafts\./, ''), documentType: 'socialPost'}
-  const blocked = issues.length > 0 || (needsConfirmation && !confirmed)
+  const blocked = issues.length > 0
 
   const publish = async () => {
     setBusy(true)
@@ -76,7 +72,7 @@ function PublishDialog({
     try {
       // The backend publishes the saved version, so save pending edits first.
       if (hasDraft) await apply(publishDocument(handle))
-      const body: PublishNowRequest = needsConfirmation ? {confirmUnapproved: true} : {}
+      const body: PublishNowRequest = {}
       const response = await request<PublishNowResponse>(`/api/posts/${encodeURIComponent(handle.documentId)}/publish`, {
         method: 'POST',
         body,
@@ -153,16 +149,6 @@ function PublishDialog({
             </Stack>
           </Card>
         )}
-        {needsConfirmation && (
-          <Card tone="caution" border radius={2} padding={3}>
-            <Flex gap={3} align="flex-start">
-              <Checkbox id="confirm-unapproved" checked={confirmed} onChange={(event) => setConfirmed(event.currentTarget.checked)} />
-              <Text as="label" htmlFor="confirm-unapproved" size={1}>
-                This post is <strong>{WORKFLOW_STATUS_LABELS[status].toLowerCase()}</strong> and has not been approved. Publish it anyway.
-              </Text>
-            </Flex>
-          </Card>
-        )}
         {result && (
           <Card tone={result.tone} border radius={2} padding={3}>
             <Text size={1}>{result.message}</Text>
@@ -229,12 +215,9 @@ export function EditorActions({
     return null
   }
 
-  const canPublishNow = DIRECT_PUBLISH_STATUSES.includes(status) || CONFIRMABLE_PUBLISH_STATUSES.includes(status)
-  const publishReason = !isBackendConfigured
-    ? 'Backend URL not configured (SANITY_APP_WEB_URL).'
-    : status === 'idea'
-      ? 'Start a draft before publishing.'
-      : null
+  // Publishing requires approval; before that the button is hidden, not merely disabled.
+  const canPublishNow = publishEligibility(status).allowed
+  const publishReason = isBackendConfigured ? null : 'Backend URL not configured (SANITY_APP_WEB_URL).'
 
   return (
     <Flex gap={2} align="center" wrap="wrap">
@@ -279,7 +262,7 @@ export function EditorActions({
         <DisabledWithReason reason={publishReason}>
           <Button
             tone={status === 'failed' ? 'critical' : 'default'}
-            mode={status === 'failed' || status === 'approved' || status === 'scheduled' ? 'default' : 'ghost'}
+            mode="default"
             icon={PublishIcon}
             text={status === 'failed' ? 'Retry' : 'Publish now'}
             fontSize={1}
