@@ -1,5 +1,5 @@
 {
-  "name": "@social-studio/database",
+  "name": "@social-studio/tenancy",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,15 +11,9 @@
     "lint": "eslint .",
     "test": "vitest run"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "2.117.2"
-  },
   "devDependencies": {
     "@sanity/eslint-config-studio": "7.0.0",
-    "@types/node": "24.19.0",
-    "@types/pg": "8.23.1",
     "eslint": "10.11.0",
-    "pg": "8.23.0",
     "typescript": "6.0.3",
     "vitest": "5.0.1"
   }
