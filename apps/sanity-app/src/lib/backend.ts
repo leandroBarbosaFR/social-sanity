@@ -56,7 +56,12 @@ export function useBackend() {
           body: init.body === undefined ? undefined : JSON.stringify(init.body),
         })
       } catch {
-        throw new BackendError('network_error', `Could not reach the backend at ${appConfig.webUrl}.`)
+        // A browser reports a CORS rejection exactly like a network failure, so name the origin the
+        // backend must allow: a deployed app runs on its own https://<appHost>.sanity.studio origin.
+        throw new BackendError(
+          'network_error',
+          `Could not reach the backend at ${appConfig.webUrl}. If it is running, add this app's origin (${window.location.origin}) to ALLOWED_APP_ORIGINS on the backend.`,
+        )
       }
 
       const payload: unknown = await response.json().catch(() => null)

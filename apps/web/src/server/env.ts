@@ -2,6 +2,7 @@ import 'server-only'
 import {DatabaseConfigError, parseEncryptionKey, type EncryptionKey} from '@social-studio/database'
 import type {InstagramAppConfig} from '@social-studio/instagram'
 import {z} from 'zod'
+import {parseAllowedOrigins} from './corsPolicy'
 import {ApiError} from './errors'
 
 /**
@@ -156,20 +157,9 @@ export function getAppBaseUrl(): string {
   return base
 }
 
-/** Origins allowed to call the API from a browser (the Sanity app). */
+/** Origins allowed to call the API from a browser (the Sanity app); comma-separated, see corsPolicy. */
 export function getAllowedOrigins(): ReadonlySet<string> {
-  const raw = readVar('ALLOWED_APP_ORIGINS') ?? ''
-  const origins = new Set<string>()
-  for (const entry of raw.split(',')) {
-    const value = entry.trim()
-    if (!value) continue
-    try {
-      origins.add(new URL(value).origin)
-    } catch {
-      // ignore malformed entries
-    }
-  }
-  return origins
+  return parseAllowedOrigins(readVar('ALLOWED_APP_ORIGINS'))
 }
 
 export function getInternalApiSecret(): string {
@@ -182,6 +172,7 @@ export function getInternalApiSecret(): string {
 
 /** Booleans only: used by GET /api/health. */
 export function getIntegrationStatus(): {
+  ok: true
   sanity: boolean
   supabase: boolean
   meta: boolean
@@ -198,6 +189,7 @@ export function getIntegrationStatus(): {
     }
   }
   return {
+    ok: true,
     sanity: ok(getSanityConfig),
     supabase: ok(getSupabaseConfig),
     meta: isMetaConfigured(),

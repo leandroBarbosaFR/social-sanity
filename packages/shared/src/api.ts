@@ -27,8 +27,14 @@ export type ApiErrorCode =
   | 'ai_unavailable'
   | 'internal_error'
 
-/** GET /api/health — which server integrations are configured (booleans only). */
+/**
+ * GET /api/health — the one health contract shared by backend and app.
+ * `ok` means "the backend is reachable and answering"; the other flags say which optional
+ * integrations are configured (booleans only, never values). A backend with a misconfigured
+ * integration is still reachable.
+ */
 export interface IntegrationStatusResponse {
+  ok: true
   sanity: boolean
   supabase: boolean
   meta: boolean
@@ -37,6 +43,29 @@ export interface IntegrationStatusResponse {
   contentAgent: boolean
   /** `mock` only in development when INSTAGRAM_API_MODE=mock. */
   instagramMode: 'live' | 'mock' | 'unconfigured'
+}
+
+const INSTAGRAM_MODES = ['live', 'mock', 'unconfigured'] as const
+
+/**
+ * Reads a /api/health body. Reachability comes from the HTTP success itself, so an older backend
+ * without `ok` still counts as reachable; unknown or missing flags read as "not configured".
+ * Returns null only when the body is not a JSON object (e.g. an HTML error page from a proxy).
+ */
+export function parseIntegrationStatus(body: unknown): IntegrationStatusResponse | null {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) return null
+  const record = body as Record<string, unknown>
+  const flag = (key: string) => record[key] === true
+  const mode = record['instagramMode']
+  return {
+    ok: true,
+    sanity: flag('sanity'),
+    supabase: flag('supabase'),
+    meta: flag('meta'),
+    encryption: flag('encryption'),
+    contentAgent: flag('contentAgent'),
+    instagramMode: (INSTAGRAM_MODES as readonly unknown[]).includes(mode) ? (mode as IntegrationStatusResponse['instagramMode']) : 'unconfigured',
+  }
 }
 
 /** POST /api/auth/instagram/start */

@@ -1,23 +1,25 @@
 import 'server-only'
+import {corsHeadersFor} from './corsPolicy'
 import {getAllowedOrigins} from './env'
+import {logger} from './log'
 
-const ALLOWED_METHODS = 'GET, POST, OPTIONS'
-const ALLOWED_HEADERS = 'Authorization, Content-Type'
+/** Origins already reported as rejected, so a misconfiguration is logged once, not on every request. */
+const reportedOrigins = new Set<string>()
 
 /**
  * CORS for the Sanity app. The Origin is reflected only when it is listed in ALLOWED_APP_ORIGINS.
  * No credentials: the app authenticates with a bearer token, not cookies.
  */
 export function corsHeaders(request: Request): Headers {
-  const headers = new Headers({Vary: 'Origin'})
   const origin = request.headers.get('origin')
-  if (origin && getAllowedOrigins().has(origin)) {
-    headers.set('Access-Control-Allow-Origin', origin)
-    headers.set('Access-Control-Allow-Methods', ALLOWED_METHODS)
-    headers.set('Access-Control-Allow-Headers', ALLOWED_HEADERS)
-    headers.set('Access-Control-Max-Age', '600')
+  const allowed = getAllowedOrigins()
+  if (origin && !allowed.has(origin) && !reportedOrigins.has(origin)) {
+    reportedOrigins.add(origin)
+    // A deployed Sanity app runs on its own https://<appHost>.sanity.studio origin; if it is missing
+    // here, every browser call fails as "backend unreachable".
+    logger.warn('cors_origin_rejected', {origin, hint: 'Add this origin to ALLOWED_APP_ORIGINS if it is the Sanity app.'})
   }
-  return headers
+  return corsHeadersFor(origin, allowed)
 }
 
 /** OPTIONS preflight. Disallowed origins get a 204 without Allow-Origin, which the browser rejects. */
