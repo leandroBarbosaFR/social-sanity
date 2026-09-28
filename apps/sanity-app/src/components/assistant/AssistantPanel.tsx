@@ -6,13 +6,32 @@ import {Box, Button, Card, Flex, Stack, Text, TextArea} from '@sanity/ui'
 import {useAuthToken} from '@sanity/sdk-react'
 import type {AssistantChatRequest} from '@social-studio/shared'
 import {DefaultChatTransport, type UIMessage} from 'ai'
-import {useEffect, useMemo, useRef, useState, type KeyboardEvent} from 'react'
+import {useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode} from 'react'
 
 import {appConfig} from '../../config'
 import {isBackendConfigured} from '../../lib/backend'
 import {useRouter} from '../../lib/router'
 
 const newThreadId = () => crypto.randomUUID().replaceAll('-', '')
+
+/** Renders the agent's Markdown links (`[label](https://…)`) as links; everything else stays text. */
+function RichText({text}: {text: string}) {
+  const parts: ReactNode[] = []
+  const pattern = /\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g
+  let last = 0
+  for (const match of text.matchAll(pattern)) {
+    const index = match.index ?? 0
+    if (index > last) parts.push(text.slice(last, index))
+    parts.push(
+      <a key={index} href={match[2]} target="_blank" rel="noreferrer" style={{color: 'var(--card-link-fg-color)'}}>
+        {match[1]}
+      </a>,
+    )
+    last = index + match[0].length
+  }
+  parts.push(text.slice(last).replace(/\*\*/g, ''))
+  return <>{parts}</>
+}
 
 function textOf(message: UIMessage): string {
   return message.parts.map((part) => (part.type === 'text' ? part.text : '')).join('')
@@ -79,7 +98,7 @@ function Conversation({threadId, postId}: {threadId: string; postId: string | nu
               style={message.role === 'user' ? {marginLeft: 32} : {marginRight: 16}}
             >
               <Text size={1} style={{whiteSpace: 'pre-wrap'}}>
-                {textOf(message)}
+                <RichText text={textOf(message)} />
               </Text>
             </Card>
           ))}

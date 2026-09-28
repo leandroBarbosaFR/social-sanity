@@ -39,7 +39,7 @@ export async function POST(request: Request): Promise<Response> {
     if (postId) context['open-post-id'] = toPublishedId(postId, 'postId')
 
     try {
-      const {provider, application} = contentAgentFor(bearerToken(request))
+      const {provider, application} = await contentAgentFor(bearerToken(request))
       const result = streamText({
         model: provider.agent(scopedThreadId(user.id, threadId), {application, config: assistantConfig(context)}),
         prompt: message,

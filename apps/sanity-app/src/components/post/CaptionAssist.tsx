@@ -11,6 +11,13 @@ import {BackendError, errorMessage, isBackendConfigured, useBackend} from '../..
  * client's brand guidelines. The suggestion is shown first; "Use this" puts it in the editor as an
  * unsaved change, like typing it.
  */
+const PRESETS: {label: string; brief: string}[] = [
+  {label: 'Shorter', brief: 'Rewrite it shorter: two or three sentences, same message.'},
+  {label: 'Alternative angle', brief: 'Write an alternative caption with a different angle from the current one.'},
+  {label: 'Adapt for Reel', brief: 'Adapt for a Reel: a one-line hook first, then one short paragraph.'},
+  {label: 'Hashtags focus', brief: 'Keep the caption close to the current one and focus on better, more specific hashtags.'},
+]
+
 export function CaptionAssist({handle}: {handle: DocumentHandle}) {
   const [open, setOpen] = useState(false)
   const [brief, setBrief] = useState('')
@@ -85,12 +92,27 @@ export function CaptionAssist({handle}: {handle: DocumentHandle}) {
         >
           <Stack gap={4} padding={4}>
             <Text size={1} muted>
-              Content Agent reads this post, its campaign and the client’s brand guidelines. It uses your organization’s AI credits.
+              Content Agent reads this post, its campaign (objective, audience, key messages) and the client’s brand guidelines
+              (voice, pillars, words to use and avoid, calls to action). A draft takes about half a minute and uses AI credits.
             </Text>
             <Stack gap={2}>
               <Text as="label" htmlFor="caption-brief" size={1} weight="medium">
                 Direction (optional)
               </Text>
+              <Flex gap={1} wrap="wrap">
+                {PRESETS.map((preset) => (
+                  <Button
+                    key={preset.label}
+                    mode={brief === preset.brief ? 'default' : 'ghost'}
+                    tone={brief === preset.brief ? 'primary' : 'default'}
+                    text={preset.label}
+                    fontSize={1}
+                    padding={2}
+                    disabled={busy}
+                    onClick={() => setBrief(brief === preset.brief ? '' : preset.brief)}
+                  />
+                ))}
+              </Flex>
               <TextInput
                 id="caption-brief"
                 fontSize={1}

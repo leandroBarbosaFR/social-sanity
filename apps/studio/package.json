@@ -10,7 +10,8 @@
     "schema:deploy": "sanity schema deploy",
     "seed": "sanity exec scripts/seed.ts --with-user-token",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "enrich-demo": "sanity exec scripts/enrich-demo.ts --with-user-token"
   },
   "dependencies": {
     "@sanity/sdk": "3.5.0",

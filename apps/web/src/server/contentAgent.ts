@@ -18,14 +18,28 @@ import {logger} from './log'
  * writes are attributed to them, and no shared editor token is needed. The browser never talks to
  * the agent directly.
  */
-export function contentAgentFor(userToken: string): {provider: ContentAgentProvider; application: Application} {
+export async function contentAgentFor(userToken: string): Promise<{provider: ContentAgentProvider; application: Application}> {
   const {organizationId, projectId, dataset} = getContentAgentConfig()
-  return {
-    provider: createContentAgent({organizationId, token: userToken}),
-    // Resolved server-side by workspace name + dataset, like `fromClient` in a Studio. Requires the
-    // admin Studio (apps/studio) to be deployed and opened once.
-    application: {name: CONTENT_AGENT_WORKSPACE, resource: {id: `${projectId}.${dataset}`, type: 'dataset'}},
-  }
+  const provider = createContentAgent({organizationId, token: userToken})
+  return {provider, application: await resolveApplication(provider, projectId, dataset)}
+}
+
+/**
+ * The deployed admin Studio workspace Content Agent works in. Addressing it by name + resource is
+ * not enough (the agent then asks "which studio?"); it needs the application key, which is stable
+ * per deployment, so it is cached per process.
+ */
+const applicationCache = new Map<string, {application: Application; expiresAt: number}>()
+const APPLICATION_TTL_MS = 10 * 60_000
+
+async function resolveApplication(provider: ContentAgentProvider, projectId: string, dataset: string): Promise<Application> {
+  const cacheKey = `${projectId}.${dataset}`
+  const cached = applicationCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.application
+  const resolved = await provider.resolveApplication({config: () => ({projectId, dataset})}, CONTENT_AGENT_WORKSPACE)
+  const application: Application = resolved.key ? {key: resolved.key} : resolved
+  applicationCache.set(cacheKey, {application, expiresAt: Date.now() + APPLICATION_TTL_MS})
+  return application
 }
 
 /** Types the agent may read: the content model, not system documents. */

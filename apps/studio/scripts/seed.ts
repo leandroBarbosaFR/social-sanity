@@ -12,6 +12,8 @@ import {deflateSync} from 'node:zlib'
 
 import {getCliClient} from 'sanity/cli'
 
+import {BRAND_GUIDELINES, CAMPAIGN_CONTEXT, CLIENT_CONTEXT} from './demo-context'
+
 const client = getCliClient({apiVersion: '2026-09-01'})
 
 const CRC_TABLE = Array.from({length: 256}, (_, n) => {
@@ -122,6 +124,8 @@ async function main() {
     _id: clients.bistro,
     _type: 'client',
     name: 'Maison Bistro',
+    slug: {_type: 'slug', current: CLIENT_CONTEXT['Maison Bistro']!.slug},
+    primaryLanguage: CLIENT_CONTEXT['Maison Bistro']!.primaryLanguage,
     organization: ref(orgId),
     website: 'https://example.com/maison-bistro',
     industry: 'Hospitality',
@@ -132,6 +136,8 @@ async function main() {
     _id: clients.studio,
     _type: 'client',
     name: 'Atelier Form',
+    slug: {_type: 'slug', current: CLIENT_CONTEXT['Atelier Form']!.slug},
+    primaryLanguage: CLIENT_CONTEXT['Atelier Form']!.primaryLanguage,
     organization: ref(orgId),
     website: 'https://example.com/atelier-form',
     industry: 'Architecture',
@@ -142,6 +148,8 @@ async function main() {
     _id: clients.outdoor,
     _type: 'client',
     name: 'Ridgeline Outdoor',
+    slug: {_type: 'slug', current: CLIENT_CONTEXT['Ridgeline Outdoor']!.slug},
+    primaryLanguage: CLIENT_CONTEXT['Ridgeline Outdoor']!.primaryLanguage,
     organization: ref(orgId),
     website: 'https://example.com/ridgeline',
     industry: 'Retail',
@@ -149,22 +157,15 @@ async function main() {
     status: 'active',
   })
 
-  tx.create({
-    _type: 'brandGuidelines',
-    client: ref(clients.bistro),
-    brandVoice: 'Warm, unpretentious and precise about ingredients. Never salesy.',
-    targetAudience: 'Local professionals aged 28–55 who eat out weekly.',
-    contentPillars: ['Seasonal produce', 'Behind the pass', 'Suppliers', 'Wine pairings'],
-    wordsToUse: ['seasonal', 'market', 'slow-cooked'],
-    wordsToAvoid: ['cheap', 'deal', 'foodie'],
-    ctaPreferences: ['Book a table', 'See the menu'],
-    languages: ['en-GB', 'fr-FR'],
-  })
+  tx.create({_type: 'brandGuidelines', client: ref(clients.bistro), ...BRAND_GUIDELINES['Maison Bistro']})
+  tx.create({_type: 'brandGuidelines', client: ref(clients.studio), ...BRAND_GUIDELINES['Atelier Form']})
+  tx.create({_type: 'brandGuidelines', client: ref(clients.outdoor), ...BRAND_GUIDELINES['Ridgeline Outdoor']})
 
   tx.create({
     _id: campaigns.autumnMenu,
     _type: 'campaign',
     title: 'Autumn menu',
+    ...CAMPAIGN_CONTEXT['Autumn menu'],
     client: ref(clients.bistro),
     status: 'active',
     startDate: at(-7, 0).slice(0, 10),
@@ -175,6 +176,7 @@ async function main() {
     _id: campaigns.launch,
     _type: 'campaign',
     title: 'Timber House launch',
+    ...CAMPAIGN_CONTEXT['Timber House launch'],
     client: ref(clients.studio),
     status: 'planned',
     startDate: at(3, 0).slice(0, 10),
@@ -185,6 +187,7 @@ async function main() {
     _id: campaigns.winterGear,
     _type: 'campaign',
     title: 'Winter gear',
+    ...CAMPAIGN_CONTEXT['Winter gear'],
     client: ref(clients.outdoor),
     status: 'active',
     startDate: at(-2, 0).slice(0, 10),
