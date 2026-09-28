@@ -5,15 +5,28 @@ An agency workspace for planning, approving, scheduling and publishing social co
 Dashboard, uses Sanity UI and the Content Lake for all content and workflow state, and publishes to
 Instagram through a small Next.js backend that is the only place secrets live.
 
-Milestone 1 status: foundation complete (content model, app shell, dashboard, content list, post
-editor with Instagram preview, calendar, clients, campaigns, media, settings, Instagram connection
-flow, publishing and scheduling architecture). Review and approval run on
-[Sanity Workflows](https://www.sanity.io/docs/workflows) (early access), and AI features (caption
-drafts, an assistant panel) on [Sanity Content Agent](https://www.sanity.io/docs/content-agent).
-Analytics and additional networks are placeholders.
+Sanity models the whole editorial process here, not just the posts: client → brand guidelines →
+campaign → social post → review workflow ([Sanity Workflows](https://www.sanity.io/docs/workflows))
+→ human approval → publishing to Instagram, orchestrated by Sanity Functions. AI caption drafts and
+an assistant run on [Sanity Content Agent](https://www.sanity.io/docs/content-agent) and read the
+structured brand and campaign context. AI never approves or publishes anything.
+
+## Sanity Challenge 2026
+
+Built for the DEV + Sanity Challenge 2026, Path Two ("Vibe-Code Something Strange"), with Claude Code.
+
+| | |
+| --- | --- |
+| Sanity project | `8btwn23g`, dataset `production` |
+| App (Sanity Dashboard) | "Social Studio" App SDK app, deployed to the project's organization |
+| Admin Studio | https://sanity-social-8btwn23g.sanity.studio (Sanity login + project membership) |
+| Submission draft | [docs/challenge-submission.md](docs/challenge-submission.md) |
+| Judge testing | [docs/judge-testing.md](docs/judge-testing.md) |
+| Build log | [docs/challenge-build-log.md](docs/challenge-build-log.md) |
 
 <!-- toc -->
 
+- [Sanity Challenge 2026](#sanity-challenge-2026)
 - [Architecture](#architecture)
 - [Monorepo structure](#monorepo-structure)
 - [Versions](#versions)
@@ -161,8 +174,36 @@ Each app reads its own `.env` (copy the relevant block from the root `.env.examp
 The Sanity app renders only inside the Sanity Dashboard. `pnpm dev:app` prints a Dashboard URL to
 open; sign in with a Sanity account that belongs to the organization.
 
+**Local token store (Supabase).** The backend keeps Instagram tokens in Supabase. For local work,
+run it in Docker with the Supabase CLI; the migrations apply automatically:
+
+```bash
+cd packages/database
+npx supabase@2.118.0 start -x studio,imgproxy,vector,logflare,supavisor,edge-runtime,realtime,storage-api,inbucket,postgres-meta
+npx supabase@2.118.0 status -o env   # API_URL → NEXT_PUBLIC_SUPABASE_URL, SECRET_KEY → SUPABASE_SERVICE_ROLE_KEY
+```
+
+Without Meta credentials, set `INSTAGRAM_API_MODE=mock` in `apps/web/.env.local` to exercise the
+whole connect/publish lifecycle locally. Mock connections and mock publishes are labelled `mock`
+everywhere (data, UI, history) and mock mode is refused when `NODE_ENV=production`.
+
+**Demo data** (fictional businesses):
+
+```bash
+pnpm --filter @social-studio/studio seed                    # fresh dataset only
+pnpm --filter @social-studio/studio enrich-demo             # add brand/campaign context to an older seed
+pnpm --filter @social-studio/studio refresh-demo-dates      # move past-due demo posts into the future
+pnpm --filter @social-studio/studio start-review-workflows  # one Sanity Workflows run per post
+```
+
 Quality gates, run from the root: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build` (or
-`pnpm check`).
+`pnpm check`, which runs all four).
+
+| Test suite | What it covers | Tests |
+| --- | --- | --- |
+| `packages/workflows` | The post review definition on the in-memory Workflows engine: intake routing, review loop, approval actor/time, reopen guard, completion on publish, one run per post | 20 |
+| `packages/shared` | Approval-only publishing, editorial/publishing status split, user transitions, per-format media validation, caption/hashtag limits, scheduling | 30 |
+| `packages/instagram` | Meta error mapping and publish-flow idempotency against a scripted Graph API: resume, never re-publish a published container, abort on transient errors | 22 |
 
 ## Sanity setup
 
@@ -237,9 +278,9 @@ completes (`published` stage).
 
 - **Schedule** is disabled until the content is complete for its format, the time is in the future,
   and the client has a connected Instagram account. The editor lists what is missing.
-- **Publish now** works directly from Approved, Scheduled and Failed. From Draft or a review state it
-  requires ticking an explicit “publish without approval” confirmation; the server enforces the same
-  rule.
+- **Publish now** exists only for Approved, Scheduled and Failed posts. Nothing that has not passed
+  the review workflow can be published: the app hides the action and the API refuses it
+  (`publishEligibility` in `packages/shared`), and the publishing claim re-checks the status atomically.
 - Posts are read-only while publishing and after publishing.
 - Failures show a typed reason (expired token, revoked permission, invalid media, upload failure,
   Meta API error, rate limit, timeout, unknown), the raw message, the Meta error code, attempt count
@@ -435,17 +476,24 @@ entry, and the dashboard lists it under Publishing failures.
 
 ## Known limitations
 
-- **Not yet run end to end.** Everything typechecks, lints and builds, but the app has not been
-  opened in the Sanity Dashboard, and no real Meta account has been connected. The token check
-  (`/users/me` + `/projects/:id`) has not been exercised with an App SDK token. `useAuthToken()`
-  can return null in some Dashboard auth modes; the app then shows a clear “no session token” error.
+- **No real Instagram account has been connected yet.** Publishing to Meta needs a Meta app and an
+  Instagram professional account (see [Meta developer setup](#meta-developer-setup)). The full
+  connect/publish/failure lifecycle was verified against the real backend and Content Lake in mock
+  mode (see the build log), and the Graph API layer is covered by tests against a scripted API.
+- **The backend is not deployed yet.** The deployed Dashboard app calls `SANITY_APP_WEB_URL`; until
+  the backend runs on a public URL, caption drafts, the assistant, Instagram connection and publishing
+  only work with the backend running locally. Browsing, editing, calendar and the review workflow work
+  without it.
+- **Sanity Functions are not deployed yet** (Blueprints stack creation is an admin step, and the
+  publishing functions need the public backend URL). The scheduler was run locally with
+  `sanity functions test` (dry run).
+- **The UI has not been visually checked in this environment** (no browser available to the agent);
+  it builds, typechecks and uses Sanity UI throughout.
 - **Sanity Workflows is early access (0.x).** Minor versions can break APIs; read the
-  [release notes](https://www.sanity.io/docs/workflows/release-notes) before upgrading. The definition
-  is tested on the in-memory engine (`pnpm test`) and was smoke-tested against the project's Content
-  Lake. The editor UI, the Studio plugin and `sync-workflow-status` have not been run end to end.
-- **Content Agent has not been called yet.** It needs the admin Studio deployed and opened once.
-  Using the App SDK user token through the backend is how Studio authenticates, but it is unverified
-  here.
+  [release notes](https://www.sanity.io/docs/workflows/release-notes) before upgrading.
+- **Content Agent** needs the deployed admin Studio (done) and costs AI credits per call. In
+  `content-agent` 1.3.1 the one-shot `prompt()` cannot parse the API's streamed reply, so drafts use a
+  throwaway thread instead.
 - `defineScheduledFunction` is marked alpha in `@sanity/blueprints` 0.27.0, and cron cadence limits
   depend on your plan.
 - If media is replaced between a retryable failure and its retry, the resumed container still holds
@@ -456,10 +504,10 @@ entry, and the dashboard lists it under Publishing failures.
 
 | Piece | Where | Command |
 | --- | --- | --- |
-| Sanity app | Sanity Dashboard | `pnpm --filter @social-studio/sanity-app deploy` (first time add `-- --create --title "Social Studio"`, then save the returned app ID as `deployment.appId` in `sanity.cli.ts`) |
+| Sanity app | Sanity Dashboard | `pnpm --filter @social-studio/sanity-app deploy` (deployed; app ID in `sanity.cli.ts`) |
 | Schema | Content Lake | `pnpm --filter @social-studio/studio schema:deploy` |
 | Review workflow | Content Lake | `pnpm workflows:deploy` |
-| Admin Studio | Sanity hosting | `pnpm --filter @social-studio/studio deploy` (required for Content Agent; open it once) |
+| Admin Studio | Sanity hosting | `pnpm --filter @social-studio/studio deploy` (deployed to sanity-social-8btwn23g.sanity.studio; required for Content Agent) |
 | Backend | Vercel | Import the repo, root directory `apps/web`, framework Next.js, install command `pnpm install`, env vars from `.env.example` |
 | Database | Supabase | Apply `packages/database/supabase/migrations` |
 | Functions | Sanity Blueprints | see [Publishing architecture](#publishing-architecture) |

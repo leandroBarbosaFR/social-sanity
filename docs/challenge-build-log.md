@@ -83,3 +83,28 @@ Concise, honest notes from building this with Claude Code. No secrets are record
 - Tests added: publishing rules and validation (30), Meta error mapping and publish-flow idempotency
   against a scripted Graph API (22). One expectation was wrong on Claude's side (`unknown` Meta errors
   are retryable by design; container resume makes a manual retry safe).
+
+## Verification against the real project (2026-09-28)
+
+- Backend run locally against project `8btwn23g`, with a local Supabase (Docker, via the Supabase CLI)
+  as the token store and `INSTAGRAM_API_MODE=mock` (no Meta credentials yet). Throwaway documents were
+  used and deleted afterwards.
+- OAuth: start → authorize → callback connected a mock account; the Sanity client document got only
+  the summary (`mode: mock`), Supabase got the AES-GCM token (`v1.` prefix). Replaying a launched state
+  → `invalid_state`; a callback without the browser-binding cookie → `csrf`.
+- Publishing: approved post → published (mock) with media ID, attempt count and history written to
+  Sanity; second publish → `already_published`; draft post → refused ("Only approved posts can be
+  published"); after disconnecting the account → `failed` with `account_not_connected`.
+- Scheduler: `sanity functions test schedule-posts` (dry run) found the due posts. It also exposed
+  that two seeded "scheduled" demo posts had dates in the past, which a deployed scheduler would try to
+  publish; `refresh-demo-dates` now moves stale demo dates forward by whole weeks.
+- Workflows: `start-review-workflows` started one run per demo post; the intake stage placed each at
+  its current status (idea, draft, internal review, client review, approved, published).
+- Deployments: App SDK app "Social Studio" in the organization Dashboard; admin Studio at
+  sanity-social-8btwn23g.sanity.studio. Functions are not deployed (need the public backend URL and a
+  Blueprints stack, an admin step).
+- Mistakes on the way: a commit accidentally included the functions' local `.build/` output
+  (checked for secrets, removed in a follow-up commit, now gitignored); an OAuth test script called
+  the authorize URL twice and consumed its own state.
+- Not verified: the UI has not been looked at in a browser by the agent (no browser available);
+  a real Instagram publish has not happened (no Meta app/account connected yet).

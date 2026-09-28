@@ -3,7 +3,6 @@ import {BellIcon} from '@sanity/icons/Bell'
 import {DocumentTextIcon} from '@sanity/icons/DocumentText'
 import {RocketIcon} from '@sanity/icons/Rocket'
 import {SearchIcon} from '@sanity/icons/Search'
-import {SparklesIcon} from '@sanity/icons/Sparkles'
 import {UsersIcon} from '@sanity/icons/Users'
 import {Box, Button, Card, Flex, Text, TextInput} from '@sanity/ui'
 import {Menu, MenuButton, MenuItem} from '@sanity/ui/menu'
@@ -75,7 +74,7 @@ function CreateMenu() {
   )
 }
 
-export function TopBar({assistantOpen, onToggleAssistant}: {assistantOpen: boolean; onToggleAssistant: () => void}) {
+export function TopBar() {
   return (
     <Card borderBottom paddingX={2} paddingY={2} style={{flex: 'none'}}>
       <Flex align="center" gap={2}>
@@ -85,16 +84,6 @@ export function TopBar({assistantOpen, onToggleAssistant}: {assistantOpen: boole
           <SearchField />
         </Box>
         <CreateMenu />
-        <Button
-          mode={assistantOpen ? 'default' : 'bleed'}
-          icon={SparklesIcon}
-          padding={2}
-          fontSize={1}
-          selected={assistantOpen}
-          aria-label="Assistant"
-          title="Assistant"
-          onClick={onToggleAssistant}
-        />
         <Tooltip content={<Text size={1}>Notifications are not available yet</Text>} portal padding={2}>
           <span>
             <Button mode="bleed" icon={BellIcon} padding={2} fontSize={1} disabled aria-label="Notifications" />
