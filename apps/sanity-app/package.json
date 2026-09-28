@@ -1,0 +1,40 @@
+{
+  "name": "@social-studio/sanity-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "sanity dev",
+    "build": "sanity build",
+    "start": "sanity start",
+    "deploy": "sanity deploy",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@ai-sdk/react": "3.0.295",
+    "@sanity/icons": "5.2.2",
+    "@sanity/sdk": "3.5.0",
+    "@sanity/sdk-react": "3.5.0",
+    "@sanity/ui": "4.2.6",
+    "@sanity/workflow-components": "0.35.0",
+    "@sanity/workflow-engine": "0.35.0",
+    "@sanity/workflow-react": "0.35.0",
+    "@sanity/workflow-sdk": "0.35.0",
+    "@social-studio/shared": "workspace:*",
+    "@social-studio/workflows": "workspace:*",
+    "ai": "6.0.292",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-error-boundary": "6.1.6",
+    "sanity": "6.16.0",
+    "styled-components": "6.5.3"
+  },
+  "devDependencies": {
+    "@sanity/eslint-config-studio": "7.0.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.11.0",
+    "typescript": "6.0.3"
+  }
+}

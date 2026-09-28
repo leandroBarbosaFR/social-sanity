@@ -1,0 +1,21 @@
+packages:
+  - apps/*
+  - packages/*
+  - functions/*
+
+# unrs-resolver (via eslint-config-next) ships prebuilt binaries; its install script is not needed.
+allowBuilds:
+  unrs-resolver: false
+
+# Newer than pnpm's default minimum release age at the time of setup.
+minimumReleaseAgeExclude:
+  - '@types/node@24.19.0'
+
+# Workflows (App SDK adapter + Studio plugin): SDK 3 must resolve @sanity/mutate 0.18.2; 0.18.1 can
+# leave document reads pending with Sanity client 8. Remove once @sanity/sdk requires >= 0.18.2.
+overrides:
+  '@sanity/sdk@3>@sanity/mutate': 0.18.2
+  # Every runtime sharing workflow data must run one Workflows version. sanity@6.16 bundles
+  # @sanity/workflow-cli 0.32 as an oclif plugin (`sanity workflows …`); keep it on the project's version.
+  '@sanity/cli>@sanity/workflow-cli': 0.35.0
+  '@sanity/cli>@sanity/workflow-engine': 0.35.0

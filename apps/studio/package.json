@@ -1,0 +1,38 @@
+{
+  "name": "@social-studio/studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "sanity dev --port 3334",
+    "build": "sanity build",
+    "deploy": "sanity deploy",
+    "schema:deploy": "sanity schema deploy",
+    "seed": "sanity exec scripts/seed.ts --with-user-token",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@sanity/sdk": "3.5.0",
+    "@sanity/vision": "6.16.0",
+    "@sanity/workflow-components": "0.35.0",
+    "@sanity/workflow-diagram": "0.35.0",
+    "@sanity/workflow-engine": "0.35.0",
+    "@sanity/workflow-react": "0.35.0",
+    "@sanity/workflow-sdk": "0.35.0",
+    "@sanity/workflow-studio": "0.35.0",
+    "@sanity/workflow-studio-plugin": "0.35.0",
+    "@social-studio/sanity-schema": "workspace:*",
+    "@social-studio/workflows": "workspace:*",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "sanity": "6.16.0",
+    "styled-components": "6.5.3"
+  },
+  "devDependencies": {
+    "@sanity/eslint-config-studio": "7.0.0",
+    "@types/react": "19.3.0",
+    "eslint": "10.11.0",
+    "typescript": "6.0.3"
+  }
+}
