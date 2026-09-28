@@ -1,5 +1,4 @@
 import {CalendarIcon} from '@sanity/icons/Calendar'
-import {ChartUpwardIcon} from '@sanity/icons/ChartUpward'
 import {CogIcon} from '@sanity/icons/Cog'
 import {DashboardIcon} from '@sanity/icons/Dashboard'
 import {DocumentsIcon} from '@sanity/icons/Documents'
@@ -37,11 +36,9 @@ const PRIMARY: NavItem[] = [
   {id: 'campaigns', label: 'Campaigns', icon: RocketIcon, route: {name: 'campaigns'}, matches: ['campaigns', 'campaign']},
   {id: 'clients', label: 'Clients', icon: UsersIcon, route: {name: 'clients'}, matches: ['clients', 'client']},
   {id: 'media', label: 'Media', icon: ImagesIcon, route: {name: 'media'}, matches: ['media']},
-  {id: 'analytics', label: 'Analytics', icon: ChartUpwardIcon, route: {name: 'analytics'}, matches: ['analytics'], planned: true},
 ]
 
 const SECONDARY: NavItem[] = [
-  {id: 'ai', label: 'AI Studio', icon: SparklesIcon, route: {name: 'ai'}, matches: ['ai'], planned: true},
   {id: 'settings', label: 'Settings', icon: CogIcon, route: {name: 'settings'}, matches: ['settings']},
 ]
 
@@ -104,7 +101,40 @@ function CurrentUserRow({compact}: {compact: boolean}) {
   )
 }
 
-export function NavPane({compact}: {compact: boolean}) {
+/** Opens the Content Agent assistant as a side panel next to whatever page is open. */
+function AssistantButton({compact, open, onToggle}: {compact: boolean; open: boolean; onToggle: () => void}) {
+  const button = (
+    <Button
+      mode="bleed"
+      selected={open}
+      icon={SparklesIcon}
+      text={compact ? undefined : 'AI Assistant'}
+      justify="flex-start"
+      fontSize={1}
+      padding={compact ? 3 : 2}
+      width="fill"
+      aria-label="AI Assistant"
+      aria-pressed={open}
+      onClick={onToggle}
+    />
+  )
+  if (!compact) return button
+  return (
+    <Tooltip content={<Text size={1}>AI Assistant</Text>} placement="right" portal padding={2}>
+      {button}
+    </Tooltip>
+  )
+}
+
+export function NavPane({
+  compact,
+  assistantOpen,
+  onToggleAssistant,
+}: {
+  compact: boolean
+  assistantOpen: boolean
+  onToggleAssistant: () => void
+}) {
   return (
     <Card borderRight style={{width: compact ? 53 : 212, flex: 'none', height: '100%'}}>
       <Flex direction="column" style={{height: '100%'}}>
@@ -124,6 +154,7 @@ export function NavPane({compact}: {compact: boolean}) {
           <Card borderTop />
         </Box>
         <Stack gap={1} padding={2}>
+          <AssistantButton compact={compact} open={assistantOpen} onToggle={onToggleAssistant} />
           {SECONDARY.map((item) => (
             <NavButton key={item.id} item={item} compact={compact} />
           ))}

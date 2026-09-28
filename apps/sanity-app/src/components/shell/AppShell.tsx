@@ -18,9 +18,9 @@ export function AppShell() {
   return (
     <Card style={{height: '100vh'}}>
       <Flex style={{height: '100%'}}>
-        <NavPane compact={compact} />
+        <NavPane compact={compact} assistantOpen={assistantOpen} onToggleAssistant={() => setAssistantOpen((open) => !open)} />
         <Flex direction="column" flex={1} style={{minWidth: 0, height: '100%'}}>
-          <TopBar assistantOpen={assistantOpen} onToggleAssistant={() => setAssistantOpen((open) => !open)} />
+          <TopBar />
           <Box flex={1} style={{minHeight: 0}}>
             <ErrorBoundary
               resetKeys={[toPath(route)]}

@@ -241,7 +241,7 @@ export function ContentPage({initialStatus}: {initialStatus?: string}) {
         </Flex>
       </PageHeader>
       <PageBody padding={0}>
-        <Box id="content-list" style={{minWidth: 900}}>
+        <Box id="content-list" style={{minWidth: 1000}}>
           <ContentTableHeader />
           <Suspense fallback={<LoadingState label="Loading content…" />}>
             <ContentList filters={filters} search={search} />

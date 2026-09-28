@@ -1,8 +1,7 @@
 import {DocumentTextIcon} from '@sanity/icons/DocumentText'
 import {PlayIcon} from '@sanity/icons/Play'
-import {Box, Button, Card, Flex, Stack, Text, TextSkeleton} from '@sanity/ui'
+import {Box, Button, Card, Flex, Text, TextSkeleton} from '@sanity/ui'
 import {useDocumentProjection, useDocuments, type DocumentHandle, type DocumentsOptions} from '@sanity/sdk-react'
-import {PLATFORM_LABELS, type Platform} from '@social-studio/shared'
 import {Suspense, useRef, type CSSProperties, type ReactNode} from 'react'
 
 import {formatDateTime, formatRelative} from '../lib/dates'
@@ -10,16 +9,16 @@ import {POST_ROW_PROJECTION, type PostRow} from '../lib/queries'
 import {useRouter} from '../lib/router'
 import {FormatLabel} from './FormatLabel'
 import {InstagramGlyph} from './InstagramGlyph'
-import {StatusBadge} from './StatusBadge'
+import {PublishingBadge, WorkflowStageBadge} from './StatusBadge'
 
 export const GRID: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'minmax(220px, 2.4fr) minmax(120px, 1fr) 100px 130px 130px 80px 100px',
+  gridTemplateColumns: 'minmax(200px, 2.2fr) minmax(110px, 1fr) minmax(110px, 1fr) 90px 120px 110px 120px 90px',
   alignItems: 'center',
   columnGap: 12,
 }
 
-export const COLUMNS = ['Content', 'Client', 'Format', 'Status', 'Scheduled', 'Platform', 'Updated']
+export const COLUMNS = ['Content', 'Client', 'Campaign', 'Format', 'Workflow', 'Publishing', 'Scheduled', 'Updated']
 
 function Thumb({url, type}: {url: string | null; type: string | null}) {
   const style: CSSProperties = {width: 28, height: 28, flex: 'none', overflow: 'hidden'}
@@ -69,32 +68,29 @@ export function ContentRow(handle: DocumentHandle) {
       <Box style={GRID}>
         <Flex align="center" gap={2} style={{minWidth: 0}}>
           <Thumb url={data?.thumbUrl ?? null} type={data?.thumbType ?? null} />
-          <Stack gap={2} style={{minWidth: 0}}>
-            <Text size={1} weight="medium" textOverflow="ellipsis">
-              {data?.title || 'Untitled post'}
-            </Text>
-            {data?.campaignTitle && (
-              <Text size={0} muted textOverflow="ellipsis">
-                {data.campaignTitle}
-              </Text>
-            )}
-          </Stack>
+          <Text size={1} weight="medium" textOverflow="ellipsis">
+            {data?.title || 'Untitled post'}
+          </Text>
         </Flex>
         <Text size={1} muted textOverflow="ellipsis">
           {data?.clientName ?? '—'}
         </Text>
-        <FormatLabel format={data?.format} />
-        <StatusBadge status={data?.workflowStatus} />
+        <Text size={1} muted textOverflow="ellipsis">
+          {data?.campaignTitle ?? '—'}
+        </Text>
+        <Flex align="center" gap={2}>
+          {(data?.platforms ?? []).includes('instagram') && (
+            <Text size={1} muted>
+              <InstagramGlyph title="Instagram" />
+            </Text>
+          )}
+          <FormatLabel format={data?.format} />
+        </Flex>
+        <WorkflowStageBadge status={data?.workflowStatus} />
+        <PublishingBadge status={data?.workflowStatus} />
         <Text size={1} muted textOverflow="ellipsis">
           {data?.scheduledAt ? formatDateTime(data.scheduledAt) : '—'}
         </Text>
-        <Flex gap={1}>
-          {(data?.platforms ?? []).map((platform) => (
-            <Text key={platform} size={1} muted title={PLATFORM_LABELS[platform as Platform] ?? platform}>
-              {platform === 'instagram' ? <InstagramGlyph title="Instagram" /> : platform}
-            </Text>
-          ))}
-        </Flex>
         <Text size={1} muted textOverflow="ellipsis">
           {data?._updatedAt ? formatRelative(data._updatedAt) : ''}
         </Text>
@@ -123,7 +119,7 @@ export function PostTable({options, empty}: {options: DocumentsOptions; empty: R
   const {data, hasMore, loadMore, isPending} = useDocuments({batchSize: 30, orderings: [{field: '_updatedAt', direction: 'desc'}], ...options})
   return (
     <Box style={{overflowX: 'auto'}}>
-      <Box style={{minWidth: 900}}>
+      <Box style={{minWidth: 1000}}>
         <ContentTableHeader />
         {data.length === 0 && empty}
         {data.map((handle) => (

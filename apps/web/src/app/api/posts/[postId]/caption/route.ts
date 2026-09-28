@@ -1,4 +1,6 @@
+import {randomUUID} from 'node:crypto'
 import {INSTAGRAM_LIMITS, normalizeHashtag, type GenerateCaptionResponse} from '@social-studio/shared'
+import {generateText} from 'ai'
 import {z} from 'zod'
 import {bearerToken, requireSanityUser} from '@/server/auth'
 import {contentAgentFor, readOnlyConfig, toContentAgentError} from '@/server/contentAgent'
@@ -52,18 +54,20 @@ export async function POST(request: Request, context: {params: Promise<{postId: 
     const parsed = bodySchema.safeParse(await readJson(request))
     if (!parsed.success) throw new ApiError(400, 'bad_request', 'Invalid request body.')
 
-    const {provider, application} = contentAgentFor(bearerToken(request))
     const brief = parsed.data.brief ? `\nDirection from the team: ${parsed.data.brief}` : ''
     let text: string
     try {
-      const result = await provider.prompt(
-        {application, config: readOnlyConfig(INSTRUCTION), format: 'markdown'},
-        {
-          message:
-            `Write the caption and hashtags for the socialPost with _id "${postId}" (read its draft if one exists). ` +
-            `Use its title, format, existing caption notes, campaign, and its client's brand guidelines.${brief}`,
-        },
-      )
+      const {provider, application} = await contentAgentFor(bearerToken(request))
+      // A throwaway thread: content-agent 1.3.1's one-shot prompt() cannot parse the API's streamed
+      // reply, while the thread model does. Nothing is shared between generations.
+      const result = await generateText({
+        model: provider.agent(`caption-${randomUUID()}`, {application, config: readOnlyConfig(INSTRUCTION), format: 'markdown'}),
+        prompt:
+          `Write the caption and hashtags for the socialPost with _id "${postId}" (read its draft if one exists). ` +
+          `Use its title, format, existing caption notes, its campaign (objective, audience, key messages) and its ` +
+          `client's brand guidelines (voice, audience, content pillars, words to use and avoid, CTA preferences, notes). ` +
+          `Write in the client's primaryLanguage.${brief}`,
+      })
       text = result.text
     } catch (error) {
       throw toContentAgentError(error)
