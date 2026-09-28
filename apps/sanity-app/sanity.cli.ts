@@ -9,4 +9,6 @@ export default defineCliConfig({
     icon: './social-studio.svg',
     visibility: 'default',
   },
+  // Deployed to the organization's Sanity Dashboard as "Social Studio".
+  deployment: {appId: 'jwft4ymyy5zq3sghcv1grd5s'},
 })

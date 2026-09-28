@@ -11,7 +11,9 @@
     "seed": "sanity exec scripts/seed.ts --with-user-token",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "enrich-demo": "sanity exec scripts/enrich-demo.ts --with-user-token"
+    "enrich-demo": "sanity exec scripts/enrich-demo.ts --with-user-token",
+    "refresh-demo-dates": "sanity exec scripts/refresh-demo-dates.ts --with-user-token",
+    "start-review-workflows": "sanity exec scripts/start-review-workflows.ts --with-user-token"
   },
   "dependencies": {
     "@sanity/sdk": "3.5.0",
